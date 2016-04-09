@@ -1,8 +1,10 @@
 $(window).ready(function() {
     setTimeout(function() {
         executeExtension();
-        $("#_roomListItems").bind("DOMSubtreeModified", function() {
-            executeExtension();
+        $("#_roomListItems").bind("DOMNodeRemoved", function(e) {
+            setTimeout(function() {
+                executeExtension();
+            });
         });
     }, 1000);
 });
@@ -10,9 +12,14 @@ $(window).ready(function() {
 executeExtension = function() {
     var roomList = getRoomList();
     var listKickedRoom = checkIsKickedOut(roomList);
+    listKickedRoom = listKickedRoom.filter(function(roomName) {
+        return roomName !== undefined;
+    });
 
     if (listKickedRoom.length > 0) {
         localStorage.CW_KICKOUT_NOTIFY_ROOM_LIST = getRoomList();
+
+        setKickedOutLog(listKickedRoom);
         alert("You got to kick off [" + listKickedRoom.join(" / ") + "] box");
     }
 }
@@ -73,4 +80,15 @@ arrayObjectReduce = function(arrObj) {
 
         return result;
     }, {});
+}
+
+setKickedOutLog = function(roomList) {
+    var kickLogs = JSON.parse(localStorage.CW_KICKOUT_NOTIFY_LOGS || "[]");
+    if (typeof roomList === "object" && roomList.length > 0) {
+        kickLogs = kickLogs.concat(roomList);
+    }
+
+    kickLogs = $.unique(kickLogs);
+
+    localStorage.CW_KICKOUT_NOTIFY_LOGS = JSON.stringify(kickLogs);
 }
